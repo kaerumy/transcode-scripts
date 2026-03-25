@@ -1,0 +1,10 @@
+# Simple CLI transcode scripts for FFmpeg with AMD AMF
+
+This repository contains simple command-line scripts for transcoding
+video using FFmpeg with AMD's Advanced Media Framework (AMF). These
+scripts are designed to provide an easy way to utilize AMD's hardware
+acceleration capabilities for video encoding and decoding.
+
+## Usage
+
+Just link the script to a location in your PATH eg. ~/.local/bin

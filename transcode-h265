@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Check if both arguments are provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <input_file> <bitrate_option: 5M, 20M, or 40M>"
+    exit 1
+fi
+
+INPUT=$1
+BITRATE_OPT=$2
+
+# Strip old extension and add .mp4
+OUTPUT="${INPUT%.*}.mp4"
+
+# Map the command line option to the actual bitrate value
+case $BITRATE_OPT in
+    5M)
+        BITRATE=5000000
+        ;;
+    20M)
+        BITRATE=20000000
+        ;;
+    40M)
+        BITRATE=40000000
+        ;;
+    *)
+        echo "Error: Invalid bitrate option. Please use 5, 20, or 40."
+        exit 1
+        ;;
+esac
+
+# Calculate Maxrate (Double the Bitrate)
+MAXRATE=$((BITRATE * 2))
+
+echo "Encoding $INPUT to $OUTPUT"
+echo "Target Bitrate: $BITRATE | Max Rate: $MAXRATE"
+
+/home/kaeru/src/FFmpeg/ffmpeg -i "$INPUT" \
+-vf "format=nv12" \
+-c:v hevc_amf \
+-preset quality \
+-rc vbr_peak \
+-b:v "$BITRATE" \
+-maxrate "$MAXRATE" \
+"$OUTPUT"

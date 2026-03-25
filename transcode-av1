@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# Usage: ./convert.sh <input_file> <5M|20M|40M>
+
+INPUT="$1"
+BITRATE_CHOICE="$2"
+
+# 1. Validate Input
+if [[ -z "$INPUT" || -z "$BITRATE_CHOICE" ]]; then
+    echo "Usage: $0 <input_file> <5M|20M|40M>"
+    exit 1
+fi
+
+# 2. Map Bitrate Selection to Numeric Values
+case "$BITRATE_CHOICE" in
+    "5M")
+        BV="5000000"
+        MAX="10000000"
+        ;;
+    "20M")
+        BV="20000000"
+        MAX="50000000"
+        ;;
+    "40M")
+        BV="40000000"
+        MAX="80000000"
+        ;;
+    *)
+        echo "Error: Invalid bitrate. Choose 5M, 20M, or 40M."
+        exit 1
+        ;;
+esac
+
+# 3. Generate Output Filename
+BASE="${INPUT%.*}"
+
+# Apply the -1 suffix if the input is already an .mp4
+if [[ "$INPUT" == *.mp4 ]]; then
+    OUTPUT="${BASE}-1.mp4"
+else
+    OUTPUT="${BASE}.mp4"
+fi
+
+# Overwrite Protection: Increment suffix if file already exists
+COUNTER=1
+while [[ -f "$OUTPUT" ]]; do
+    ((COUNTER++))
+    if [[ "$INPUT" == *.mp4 ]]; then
+        # Becomes filename-1-2.mp4, etc.
+        OUTPUT="${BASE}-1-${COUNTER}.mp4"
+    else
+        # Becomes filename-2.mp4, etc.
+        OUTPUT="${BASE}-${COUNTER}.mp4"
+    fi
+done
+
+# 4. Run FFmpeg
+# The scale filter forces dimensions to even numbers to prevent AMF_INVALID_RESOLUTION errors.
+/home/kaeru/src/FFmpeg/ffmpeg -i "$INPUT" \
+    -vf "scale='trunc(iw/2)*2':'trunc(ih/2)*2',format=nv12" \
+    -c:v av1_amf \
+    -preset quality \
+    -rc vbr_peak \
+    -b:v "$BV" \
+    -maxrate "$MAX" \
+    -bufsize "$MAX" \
+    "$OUTPUT"
+
+echo "Encoding complete: $OUTPUT"
