@@ -1,0 +1,118 @@
+#!/bin/bash
+
+# Usage: ./transcode -i <input_file> [-codec av1|h265] <bitrate>
+
+# Parse arguments
+INPUT=""
+CODEC=""
+BITRATE_CHOICE=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -i)
+            INPUT="$2"
+            shift 2
+            ;;
+        -codec)
+            CODEC="$2"
+            shift 2
+            ;;
+        *)
+            BITRATE_CHOICE="$1"
+            shift
+            ;;
+    esac
+done
+
+# Validate required arguments
+if [[ -z "$INPUT" || -z "$BITRATE_CHOICE" ]]; then
+    echo "Usage: $0 -i <input_file> [-codec av1|h265] <bitrate>"
+    echo ""
+    echo "AV1/H265 bitrate options: 1M, 5M, 20M, 40M, 100M"
+    exit 1
+fi
+
+# Validate codec
+if [[ "$CODEC" != "av1" && "$CODEC" != "h265" ]]; then
+    echo "Error: Invalid codec. Use 'av1' or 'h265'."
+    exit 1
+fi
+
+# Map Bitrate Selection to Numeric Values
+case "$BITRATE_CHOICE" in
+    "1M")
+        BV="1000000"
+        MAX="2000000"
+        ;;
+    "5M")
+        BV="5000000"
+        MAX="10000000"
+        ;;
+    "20M")
+        BV="20000000"
+        MAX="50000000"
+        ;;
+    "40M")
+        BV="40000000"
+        MAX="80000000"
+        ;;
+    "100M")
+        BV="100000000"
+        MAX="200000000"
+        ;;
+    *)
+        echo "Error: Invalid bitrate. Choose 1M, 5M, 20M, 40M, or 100M."
+        exit 1
+        ;;
+esac
+
+# Get current working directory for output
+SCRIPT_DIR="$(pwd)"
+
+# Extract just filename (handles relative or absolute input paths)
+BASENAME=$(basename "$INPUT")
+BASE="${BASENAME%.*}"
+
+# Apply the -1 suffix if the input is already an .mp4
+if [[ "$BASENAME" == *.mp4 ]]; then
+    OUTPUT="${SCRIPT_DIR}/${BASE}-1.mp4"
+else
+    OUTPUT="${SCRIPT_DIR}/${BASE}.mp4"
+fi
+
+# Overwrite Protection: Increment suffix if file already exists
+COUNTER=1
+while [[ -f "$OUTPUT" ]]; do
+    ((COUNTER++))
+    if [[ "$BASENAME" == *.mp4 ]]; then
+        OUTPUT="${SCRIPT_DIR}/${BASE}-1-${COUNTER}.mp4"
+    else
+        OUTPUT="${SCRIPT_DIR}/${BASE}-${COUNTER}.mp4"
+    fi
+done
+
+# Run FFmpeg
+if [[ "$CODEC" == "av1" ]]; then
+    # AV1 codec with scaling filter to ensure even resolution
+    /home/kaeru/src/FFmpeg/ffmpeg -i "$INPUT" \
+        -vf "scale='trunc(iw/2)*2':'trunc(ih/2)*2',format=nv12" \
+        -c:v av1_amf \
+        -preset quality \
+        -rc vbr_peak \
+        -b:v "$BV" \
+        -maxrate "$MAX" \
+        -bufsize "$MAX" \
+        "$OUTPUT"
+else
+    # H265 codec
+    /home/kaeru/src/FFmpeg/ffmpeg -i "$INPUT" \
+        -vf "format=nv12" \
+        -c:v hevc_amf \
+        -preset quality \
+        -rc vbr_peak \
+        -b:v "$BV" \
+        -maxrate "$MAX" \
+        "$OUTPUT"
+fi
+
+echo "Encoding complete: $OUTPUT"
