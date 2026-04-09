@@ -73,28 +73,26 @@ SCRIPT_DIR="$(pwd)"
 BASENAME=$(basename "$INPUT")
 BASE="${BASENAME%.*}"
 
-# Apply the -1 suffix if the input is already an .mp4
-if [[ "$BASENAME" == *.mp4 ]]; then
-    OUTPUT="${SCRIPT_DIR}/${BASE}-1.mp4"
+# Apply the -1 suffix only if the base output filename matches input filename
+OUTPUT_BASE="${BASE}_${CODEC}_${BITRATE_CHOICE}.mp4"
+if [[ "$BASENAME" == *.mp4 && "$OUTPUT_BASE" == "$BASENAME" ]]; then
+    OUTPUT="${SCRIPT_DIR}/${OUTPUT_BASE}-1.mp4"
 else
-    OUTPUT="${SCRIPT_DIR}/${BASE}.mp4"
+    OUTPUT="${SCRIPT_DIR}/${OUTPUT_BASE}"
 fi
 
 # Overwrite Protection: Increment suffix if file already exists
 COUNTER=1
+SUFFIX="_${CODEC}_${BITRATE_CHOICE}"
 while [[ -f "$OUTPUT" ]]; do
     ((COUNTER++))
-    if [[ "$BASENAME" == *.mp4 ]]; then
-        OUTPUT="${SCRIPT_DIR}/${BASE}-1-${COUNTER}.mp4"
-    else
-        OUTPUT="${SCRIPT_DIR}/${BASE}-${COUNTER}.mp4"
-    fi
+    OUTPUT="${SCRIPT_DIR}/${BASE}${SUFFIX}-${COUNTER}.mp4"
 done
 
 # Run FFmpeg
 if [[ "$CODEC" == "av1" ]]; then
     # AV1 codec with scaling filter to ensure even resolution
-    /home/kaeru/src/FFmpeg/ffmpeg -i "$INPUT" \
+    ffmpeg -i "$INPUT" \
         -vf "scale='trunc(iw/2)*2':'trunc(ih/2)*2',format=nv12" \
         -c:v av1_amf \
         -preset quality \
@@ -105,7 +103,7 @@ if [[ "$CODEC" == "av1" ]]; then
         "$OUTPUT"
 else
     # H265 codec
-    /home/kaeru/src/FFmpeg/ffmpeg -i "$INPUT" \
+    ffmpeg -i "$INPUT" \
         -vf "format=nv12" \
         -c:v hevc_amf \
         -preset quality \
