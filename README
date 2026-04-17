@@ -1,10 +1,29 @@
-# Simple CLI transcode scripts for FFmpeg with AMD AMF
+# CLI transcode script with AMD AMF hardware acceleration
 
-This repository contains simple command-line scripts for transcoding
-video using FFmpeg with AMD's Advanced Media Framework (AMF). These
-scripts are designed to provide an easy way to utilize AMD's hardware
-acceleration capabilities for video encoding and decoding.
+This repository contains a unified command-line script for transcoding
+video using FFmpeg with AMD's Advanced Media Framework (AMF).
 
 ## Usage
 
-Just link the script to a location in your PATH eg. ~/.local/bin
+```bash
+./transcode -i <input_file> [-codec av1|h265] <bitrate>
+```
+
+**AV1 options:** `1M`, `5M`, `20M`, `40M`, `100M`
+**H265 options:** `1M`, `5M`, `20M`, `40M`, `100M`
+
+### Examples
+
+```bash
+./transcode -i video.mkv -codec av1 40M    # AV1, 40 Mbit
+./transcode -i video.mkv -codec h265 20M   # H265, 20 Mbit
+```
+
+**Output:** Transcoded file saved to script's directory
+
+## Installation
+
+Link to a location in your PATH:
+```bash
+cp transcode ~/.local/bin/
+```

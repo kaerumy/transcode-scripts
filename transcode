@@ -73,20 +73,14 @@ SCRIPT_DIR="$(pwd)"
 BASENAME=$(basename "$INPUT")
 BASE="${BASENAME%.*}"
 
-# Apply the -1 suffix only if the base output filename matches input filename
-OUTPUT_BASE="${BASE}_${CODEC}_${BITRATE_CHOICE}.mp4"
-if [[ "$BASENAME" == *.mp4 && "$OUTPUT_BASE" == "$BASENAME" ]]; then
-    OUTPUT="${SCRIPT_DIR}/${OUTPUT_BASE}-1.mp4"
-else
-    OUTPUT="${SCRIPT_DIR}/${OUTPUT_BASE}"
-fi
+# Build output filename
+OUTPUT="${SCRIPT_DIR}/${BASE}_${CODEC}_${BITRATE_CHOICE}.mp4"
 
 # Overwrite Protection: Increment suffix if file already exists
 COUNTER=1
-SUFFIX="_${CODEC}_${BITRATE_CHOICE}"
 while [[ -f "$OUTPUT" ]]; do
+    OUTPUT="${SCRIPT_DIR}/${BASE}_${CODEC}_${BITRATE_CHOICE}-${COUNTER}.mp4"
     ((COUNTER++))
-    OUTPUT="${SCRIPT_DIR}/${BASE}${SUFFIX}-${COUNTER}.mp4"
 done
 
 # Run FFmpeg
