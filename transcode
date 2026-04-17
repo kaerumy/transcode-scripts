@@ -98,7 +98,7 @@ if [[ "$CODEC" == "av1" ]]; then
 else
     # H265 codec
     ffmpeg -i "$INPUT" \
-        -vf "format=nv12" \
+        -vf "scale='trunc(iw/2)*2':'trunc(ih/2)*2',format=nv12" \
         -c:v hevc_amf \
         -preset quality \
         -rc vbr_peak \
